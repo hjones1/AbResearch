@@ -9,12 +9,34 @@ library(rgdal)
 library(sp)
 library(maptools)
 library(tools)
-library(xlsx)
+#library(xlsx)
 library(lubridate)
 
 
 
 setwd('R:/TAFI/TAFI_MRL_Sections/Wild_Fisheries_Program/Shared/13. Market measuring')
+
+#extract FactoryEmeasure data from research Database table FactoryEmeasure
+channel <- odbcConnect('ASD_App2k')
+sql <- "SELECT 
+mb.CSA_Docket,
+mb.CSP_Length,
+mb.CSA_CatchDate,
+mb.CSA_Block,
+mb.CSA_SubBlock,
+mb.COD_Name,
+mb.CON_Surname,
+mb.CON_ORGName,
+mb.CatchWeight,
+FROM 2000-2007 mm data mb
+Order BY mb.CSA_CatchDate"
+m.measure.00.07 <- sqlQuery(channel, sql)
+close(channel)
+
+
+
+
+
 
 #extract FactoryEmeasure data from research Database table FactoryEmeasure
                                            channel <- odbcConnect('Asd_data')
