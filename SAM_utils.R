@@ -3,9 +3,11 @@
 doLogistic <- function(indat) {
     model <- glm(MatRatio ~ Length, family=binomial(link = "logit"), data = SizeMat, weights = Total)
     LM50 <-  dose.p(model, p = 0.5)[[1]]
+    LM75 <-  dose.p(model, p = 0.75)[[1]]
+    LM95 <-  dose.p(model, p = 0.95)[[1]]
     IQ <-    dose.p(model, p = 0.75)[[1]] -  dose.p(model, p = 0.25)[[1]]
-    ans <- list(LM50,IQ,model)
-    names(ans) <- c("LM50","IQ","Model")
+    ans <- list(LM50, LM75, LM95, IQ,model)
+    names(ans) <- c("LM50","LM75","LM95","IQ","Model")
     return(ans)
 }
 

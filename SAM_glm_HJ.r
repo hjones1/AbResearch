@@ -55,33 +55,29 @@ samdata$new_zone[samdata$SubBlockNo %in% c("5A", "5B", "5C")] <- "N"
 samdata$new_zone[samdata$Stat.Block %in%  c(1, 2, 3, 4,47, 48, 49,39, 40) | samdata$SubBlockNo %in% c("31 B")] <- "N" 
 samdata$new_zone[samdata$Stat.Block %in% c(seq(32, 38,1),seq(41,46,1), seq(50,57,1))] <- "BS"
 
-not<-samdata[is.na(samdata$new_zone),]
-not$new_zone<-"CW"
-
-test<-rbind(samdata, not)
-test[!(is.na(test$new_zone) | test$new_zone==""), ]
-
-samdata$new_zone<-as.factor(samdata$new_zone)
 summary(samdata)
 
-# #Option - remove Wineglass Bay Site for Season * region analysis
-# pick <- which(samdata$Site_Name == "Wineglass Bay")
-# samdata <- samdata[-pick,]
-# samdata <- droplevels(samdata)
+n.SubBlockNo<-ddply(samdata,.(SubBlockNo, FishQtr, FishYear), summarize,  n = length(Length))
+
+
+#Option - remove Wineglass Bay Site for Season * region analysis
+pick <- which(samdata$SubBlockNo == "13E")
+samdata <- samdata[pick,]
+samdata <- droplevels(samdata)
 
 # Simplify Maturity classes
 samdata$Mat <- NA
 samdata$Mat <- ifelse(samdata$Sex=="I", c("I"), c("M"))
 
 # Code Season and Site
-samdata$Season <- samdata$FishQtr
+samdata$Season <- as.factor(samdata$FishYear)
 samdata$Region <- samdata$new_zone
 
 ## Create new Season* Region interaction variable
 samdata$RegionSeason <- interaction(samdata$Region,samdata$Season)
 
 # Characterize Sites
-Sites <- unique(samdata$Stat.Block); Sites
+Sites <- unique(samdata$SubBlockNo); Sites
 NS <- length(Sites)
 
 RegionSeasonVec <- unique(samdata$RegionSeason); RegionSeasonVec
@@ -109,39 +105,42 @@ pick <- which(samdata$Length > 130)
 samdata$SizeC[pick] <- "Large"
 
 ## Calculate Base cases for each site.
-columns <- c("LM50","IQ","a","b","smallN","mediumN","largeN","totalN")
-BaseResults <- matrix(0,nrow=NSR,ncol=length(columns),dimnames=list(RegionSeasonVec,columns))
+## Calculate Base cases for each site.
+columns <- c("LM50", "LM75", "LM95","IQ","a","b","smallN","mediumN","largeN","totalN")
+BaseResults <- matrix(0,nrow=NS,ncol=length(columns),dimnames=list(RegionSeasonVec,columns))
 for (pSite in 1:NSR) {
- Site <- RegionSeasonVec[pSite]
- pick <- which(samdata$RegionSeason == Site)
- if (length(pick) > 0) {
-  subdata <- samdata[pick,]
-   } else { "Oops something has gone wrong"
-    }
-
+  Site <- RegionSeasonVec[pSite]
+  pick <- which(samdata$RegionSeason == Site)
+  if (length(pick) > 0) {
+    subdata <- samdata[pick,]
+  } else { "Oops something has gone wrong"
+  }
+  
   ## Create required fields for logistic regression
- SizeMat <- table(subdata$Length, subdata$Mat)
- SizeMat <- as.data.frame(rbind(SizeMat))
- SizeMat$Length <- as.numeric(rownames(SizeMat))
- head(SizeMat)
- SizeMat$Total <- NA
- SizeMat$Total <- SizeMat$I + SizeMat$M
- SizeMat$MatRatio <- NA
- SizeMat$MatRatio <- SizeMat$M/SizeMat$Total
+  SizeMat <- table(subdata$Length, subdata$Mat)
+  SizeMat <- as.data.frame(rbind(SizeMat))
+  SizeMat$Length <- as.numeric(rownames(SizeMat))
+  head(SizeMat)
+  SizeMat$Total <- NA
+  SizeMat$Total <- SizeMat$I + SizeMat$M
+  SizeMat$MatRatio <- NA
+  SizeMat$MatRatio <- SizeMat$M/SizeMat$Total
   out <- doLogistic(SizeMat)
- BaseResults[pSite,1] <- out$LM50
- BaseResults[pSite,2] <- out$IQ
- model <- out$Model
- BaseResults[pSite,3:4] <- model$coef
- scN <- numeric(3)
- pick <- which(SizeMat$Length <= 90)
- scN[1] <- sum(SizeMat$Total[pick],na.rm=T)
- pick <- which((SizeMat$Length > 90) & (SizeMat$Length <= 130))
- scN[2] <- sum(SizeMat$Total[pick],na.rm=T)
- pick <- which(SizeMat$Length > 130)
- scN[3] <- sum(SizeMat$Total[pick],na.rm=T)
- BaseResults[pSite,5:8] <- c(scN,sum(scN))
- plotgraph(SizeMat,out$LM50,Site,scN,savefile=F)
+  BaseResults[pSite,1] <- out$LM50
+  BaseResults[pSite,2] <- out$LM75
+  BaseResults[pSite,3] <- out$LM95
+  BaseResults[pSite,4] <- out$IQ
+  model <- out$Model
+  BaseResults[pSite,5:6] <- model$coef
+  scN <- numeric(3)
+  pick <- which(SizeMat$Length <= 90)
+  scN[1] <- sum(SizeMat$Total[pick],na.rm=T)
+  pick <- which((SizeMat$Length > 90) & (SizeMat$Length <= 130))
+  scN[2] <- sum(SizeMat$Total[pick],na.rm=T)
+  pick <- which(SizeMat$Length > 130)
+  scN[3] <- sum(SizeMat$Total[pick],na.rm=T)
+  BaseResults[pSite,7:10] <- c(scN,sum(scN))
+  plotgraph(SizeMat,out$LM50,Site,scN,savefile=F)
 }
 BaseResults
 
