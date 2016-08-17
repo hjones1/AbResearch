@@ -57,7 +57,7 @@ samdata$new_zone[samdata$Stat.Block %in% c(seq(32, 38,1),seq(41,46,1), seq(50,57
 
 summary(samdata)
 
-n.SubBlockNo<-ddply(samdata,.(SubBlockNo, FishQtr, FishYear), summarize,  n = length(Length))
+n.SubBlockNo<-ddply(samdata,.(SubBlockNo, FishYear), summarize,  n = length(Length))
 
 
 #Option - remove Wineglass Bay Site for Season * region analysis
@@ -106,16 +106,21 @@ samdata$SizeC[pick] <- "Large"
 
 ## Calculate Base cases for each site.
 ## Calculate Base cases for each site.
-columns <- c("LM50", "LM75", "LM95","IQ","a","b","smallN","mediumN","largeN","totalN")
+columns <- c("LM50", "IQ","a","b","smallN","mediumN","largeN","totalN")
 BaseResults <- matrix(0,nrow=NS,ncol=length(columns),dimnames=list(RegionSeasonVec,columns))
-for (pSite in 1:NSR) {
-  Site <- RegionSeasonVec[pSite]
-  pick <- which(samdata$RegionSeason == Site)
-  if (length(pick) > 0) {
-    subdata <- samdata[pick,]
-  } else { "Oops something has gone wrong"
-  }
-  
+# for (pSite in 1:NSR) {
+#   Site <- RegionSeasonVec[pSite]
+#   pick <- which(samdata$RegionSeason == Site)
+#   if (length(pick) > 0) {
+#     subdata <- samdata[pick,]
+#   } else { "Oops something has gone wrong"
+#   }
+
+pick <- which(samdata$Site_Name == Site1)
+if (length(pick) > 0) {
+ subdata <- samdata[pick,]
+} else { "Oops something has gone wrong"
+}
   ## Create required fields for logistic regression
   SizeMat <- table(subdata$Length, subdata$Mat)
   SizeMat <- as.data.frame(rbind(SizeMat))
@@ -140,7 +145,7 @@ for (pSite in 1:NSR) {
   pick <- which(SizeMat$Length > 130)
   scN[3] <- sum(SizeMat$Total[pick],na.rm=T)
   BaseResults[pSite,7:10] <- c(scN,sum(scN))
-  plotgraph(SizeMat,out$LM50,Site,scN,savefile=F)
+  #plotgraph(SizeMat,out$LM50,Site,scN,savefile=F)
 }
 BaseResults
 
@@ -307,7 +312,7 @@ for (i in 2:reps) {
  y <- exp(Results[i,3]+Results[i,4]*x)/(1+exp(Results[i,3]+Results[i,4]*x))
  lines(x,y,col="grey")
 }
-y <- exp(BaseResults[pSite,3]+BaseResults[pSite,4]*x)/(1+exp(BaseResults[pSite,3]+BaseResults[pSite,4]*x))
+y <- exp(BaseResults[pSite,11]+BaseResults[pSite,12]*x)/(1+exp(BaseResults[pSite,11]+BaseResults[pSite,12]*x))
 lines(x,y,col="red",lwd=3)
 
 
@@ -326,10 +331,10 @@ for (i in 1:reps) {
  y2 <- exp(Results2[i,3]+Results2[i,4]*x)/(1+exp(Results2[i,3]+Results2[i,4]*x))
  lines(x,y2,col="lightblue")
 }
-y <- exp(BaseResults[pSite2,3]+BaseResults[pSite2,4]*x)/(1+exp(BaseResults[pSite2,3]+BaseResults[pSite2,4]*x))
+y <- exp(BaseResults[pSite2,11]+BaseResults[pSite2,12]*x)/(1+exp(BaseResults[pSite2,11]+BaseResults[pSite2,12]*x))
 lines(x,y,col="red",lwd=3)
 
-y3 <- exp(BaseResults[pSite,3]+BaseResults[pSite,4]*x)/(1+exp(BaseResults[pSite,3]+BaseResults[pSite,4]*x))
+y3 <- exp(BaseResults[pSite,11]+BaseResults[pSite,12]*x)/(1+exp(BaseResults[pSite,11]+BaseResults[pSite,12]*x))
 lines(x,y3,col=4,lwd=3)
 abline(v=c(BaseResults[pSite:pSite2,1]),col=3,lwd=1)
 title(ylab=list("Proportion Mature",cex=1.0,font=2),
