@@ -18,7 +18,7 @@ library(ggplot2)
 source("D:/GitCode/AbResearch/SAM_utils_TechReport.R")
 
 
-# load D:\R_Stuff\SAM    SAM2016_April
+# load D:\R_Stuff\SAM    SAM2016_April  SAM_TechReport230816.RData
 keep(SamResults, sure =T)
 
 colnames(SamResults)[21] <- "BlockNo"
