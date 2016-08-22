@@ -2,12 +2,13 @@
 ## Fit logistic regression
 doLogistic <- function(indat) {
     model <- glm(MatRatio ~ Length, family=binomial(link = "logit"), data = SizeMat, weights = Total)
+    LM05 <-  dose.p(model, p = 0.05)[[1]]
     LM50 <-  dose.p(model, p = 0.5)[[1]]
     LM75 <-  dose.p(model, p = 0.75)[[1]]
     LM95 <-  dose.p(model, p = 0.95)[[1]]
     IQ <-    dose.p(model, p = 0.75)[[1]] -  dose.p(model, p = 0.25)[[1]]
-    ans <- list(LM50, LM75, LM95, IQ,model)
-    names(ans) <- c("LM50","LM75","LM95","IQ","Model")
+    ans <- list(LM05, LM50, LM75, LM95, IQ,model)
+    names(ans) <- c("LM05","LM50","LM75","LM95","IQ","Model")
     return(ans)
 }
 
@@ -66,9 +67,9 @@ plotgraph <- function(indat,LM50,LM75,LM95,Site,scN,savefile=T) {
   lines(xx, plogis(model$coef[1]+xx*model$coef[2]))
   lines(yy$fit+yy$se.fit ~ xx, col="red", type="l", lwd=2, lty=3)
   lines(yy$fit-yy$se.fit ~ xx, col="red", type="l", lwd=2, lty=3)
-  text(60,1.0,paste("Small  ",scN[1],sep=""),cex=1.0,font=2)
-  text(60,0.9,paste("Medium ",scN[2],sep=""),cex=1.0,font=2)
-  text(60,0.8,paste("Large  ",scN[3],sep=""),cex=1.0,font=2)
+  text(70,0.9,paste("Maturity range (mm) ",round(BaseResults[pSite,19], digits=2),sep=""),cex=1.0,font=2)
+  #text(60,0.9,paste("Medium ",scN[2],sep=""),cex=1.0,font=2)
+  #text(60,0.8,paste("Large  ",scN[3],sep=""),cex=1.0,font=2)
   legend(145,0.2,c("N > 1","N = 1"),pch=c(16,16),col=c(1,2),cex=1.25,bty="n")
   title(ylab=list("Proportion Mature",cex=1.0,font=2),
         xlab=list(paste(Site,"   Length mm",sep=""),cex=1.0,font=2))
