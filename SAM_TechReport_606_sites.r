@@ -288,3 +288,45 @@ ggplot(data = SamResults, aes(x=IQR,  y=Ld50BootRange, color=ifelse(Ld50BootRang
         axis.text.x  = element_text(size=14))+
   theme(axis.title.y = element_text(size=14),
         axis.text.y  = element_text(size=14))
+
+
+####Histogram of CIrangeL50
+ggplot(data = SamResults, aes(x=Ld50BootRange)) + 
+  geom_histogram(bins = 30)+
+  xlab(bquote(~CI['range']~'L'['50%']))+
+  ylim(0,120)+
+  theme_bw()+
+  #scale_fill_identity()+ #this makes sure the color follows the color argument above in aes()
+  theme(legend.position=c(0.9, 0.8))+
+  theme(legend.title=element_blank())+
+  theme(legend.text = element_text(size=14))+
+  theme(axis.title.x = element_text(size=14),
+        axis.text.x  = element_text(size=14))+
+  theme(axis.title.y = element_text(size=14),
+        axis.text.y  = element_text(size=14))
+
+#anova L50 by Zone
+boxcox(SamResults$LD50^1.5~SamResults$Zone)
+fit<-aov(LD50^1.5~Zone, data=SamResults)
+anova(fit)
+par(mfrow = c(2,2))
+plot(fit)
+par(mfrow = c(1,1))
+tHSDlm<- TukeyHSD(fit, ordered = FALSE, conf.level = 0.95)
+tHSDlm
+
+#set working dataframe for Tukey label function
+ASM<-SamResults
+
+
+#Boxplot by maturity L%
+ggplot(SamResults, aes(x=Zone, y=LD50)) + 
+  xlab("Zone") +  ylab(bquote(~L['50%']~'(mm)'))+
+  geom_boxplot(outlier.colour = "black", outlier.size = 3)+
+  theme_bw()+#white background
+  theme(legend.position="none",
+        axis.title.x = element_text(size=14),
+        axis.text.x  = element_text(size=14),
+        axis.title.y = element_text(size=14),
+        axis.text.y  = element_text(size=14))+
+geom_text(data = generate_label_df(tHSDlm, "Zone"), aes(x = plot.labels, y = 60, label = labels))
