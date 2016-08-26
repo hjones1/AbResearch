@@ -15,6 +15,10 @@ library(dplyr)
 library(plyr)
 library(gdata)
 library(ggplot2)
+library(multcompView)
+#sources
+source("D:/GitCode/r-AbSpatialAnalyses/GraphsUtils.r")
+
 source("D:/GitCode/AbResearch/SAM_utils_TechReport.R")
 
 
@@ -69,17 +73,6 @@ pick <- which(SamResults$Ld95BootRange > 50)
 SamResults <- SamResults[-pick,]
 SamResults <- droplevels(SamResults)
 
-
-####################     Theortical LML  #######################
-
-SamResults$L50T<-1.1539*SamResults$LD50-15.335
-SamResults$L95T<-1.0862*SamResults$LD50+32.461
-SamResults$MaxDLt<-0.46095*SamResults$L95T-0.46856*SamResults$L50T+5.58943
-SamResults$DL<-SamResults$MaxDLt/1+exp((log(19))*((SamResults$LD50-SamResults$L50T)/(SamResults$L95T-SamResults$L50T)))
-SamResults$Yr1<-SamResults$LD50+SamResults$DL
-SamResults$DL2<-SamResults$MaxDLt/1+exp((log(19))*((SamResults$Yr1-SamResults$L50T)/(SamResults$L95T-SamResults$L50T)))
-SamResults$MLSt<-SamResults$Yr1+SamResults$DL2
-SamResults$MLStc<-(SamResults$MLSt-16.8868)/0.8946
 
 
 save(SamResults, file="SamResults.Rdata")
@@ -189,9 +182,7 @@ CIRange<-rbind(rangeCI50, rangeCI95)
 rm(rangeCI50, rangeCI95)
 
 
-#sources
-source("D:/GitCode/r-AbSpatialAnalyses/GraphsUtils.r")
-library(multcompView)
+
 
 #anova diferences L%
 boxcox(CIRange$CIRange^-0.3~CIRange$LM)
@@ -330,3 +321,16 @@ ggplot(SamResults, aes(x=Zone, y=LD50)) +
         axis.title.y = element_text(size=14),
         axis.text.y  = element_text(size=14))+
 geom_text(data = generate_label_df(tHSDlm, "Zone"), aes(x = plot.labels, y = 60, label = labels))
+
+
+#Boxplot by MLStc by zone
+ggplot(SamResults, aes(x=Zone, y=MLStc)) + 
+  xlab("Zone") +  ylab("MLStc")+
+  geom_boxplot(outlier.colour = "black", outlier.size = 3)+
+  theme_bw()+#white background
+  theme(legend.position="none",
+        axis.title.x = element_text(size=14),
+        axis.text.x  = element_text(size=14),
+        axis.title.y = element_text(size=14),
+        axis.text.y  = element_text(size=14))+
+  #geom_text(data = generate_label_df(tHSDlm, "Zone"), aes(x = plot.labels, y = 60, label = labels))
