@@ -260,3 +260,125 @@ ggplot(data = SamResults, aes(x=b)) +
         axis.text.x  = element_text(size=14))+
   theme(axis.title.y = element_text(size=14),
         axis.text.y  = element_text(size=14))
+#
+#########################
+#           Plots for eLML L50%
+#########################
+#
+#
+doPlot = function(LFPlot) {
+  dum = subset(BlockSumStats, Zone == LFPlot)
+  ggobj = ggplot(data = dum, aes(y=mn.eLML, x=as.factor(BlockNo))) + 
+    xlab("BlockNo") +
+    ylab("eLML (mm)") +
+    labs(title= dum$Zone, size=10)+
+    #ylim(min(dum$sd.eLML-10), max(dum$sd.eLML+10))+
+    geom_point(position=position_dodge(), stat="identity", size =3) +
+    geom_errorbar(aes(ymin=dum$mn.eLMLbootL95, ymax=dum$mn.eLMLbootU95),
+                  width=.2,                    # Width of the error bars
+                  position=position_dodge(.9))+
+    theme_bw()+
+    theme(legend.title=element_blank(),
+          legend.text = element_text(size=14),
+          axis.title.x = element_text(size=14),
+          axis.text.x  = element_text(size=14),
+          axis.title.y = element_text(size=14),
+          axis.text.y  = element_text(size=14),
+          legend.position="none")
+  #ggsave(sprintf("%s_LFplot.tiff", LFPlot))
+  print(ggobj)
+}
+lapply(unique(BlockSumStats$Zone), doPlot)
+
+doPlot = function(LFPlot) {
+  dum = subset(SamResults, Zone == LFPlot)
+  ggobj = ggplot(data = dum, aes(y=eLML, x=as.factor(BlockNo))) + 
+    xlab("BlockNo") +
+    ylab("eLML (mm)") +
+    labs(title= dum$Zone, size=10)+
+    #ylim(min(dum$sd.eLML-10), max(dum$sd.eLML+10))+
+    geom_boxplot(outlier.colour = "black", outlier.size = 3)+
+        theme_bw()+
+    theme(legend.title=element_blank(),
+          legend.text = element_text(size=14),
+          axis.title.x = element_text(size=14),
+          axis.text.x  = element_text(size=14),
+          axis.title.y = element_text(size=14),
+          axis.text.y  = element_text(size=14),
+          legend.position="none")
+  #ggsave(sprintf("%s_LFplot.tiff", LFPlot))
+  print(ggobj)
+}
+lapply(unique(BlockSumStats$Zone), doPlot)
+
+
+#eLML boxplot from the BootU95 of L50%
+doPlot = function(LFPlot) {
+  dum = subset(SamResults, Zone == LFPlot)
+  ggobj = ggplot(data = dum, aes(y=eLMLbootU95, x=as.factor(BlockNo))) + 
+    xlab("BlockNo") +
+    ylab("eLML (UCI) (mm)") +
+    labs(title= dum$Zone, size=10)+
+    #ylim(min(dum$sd.eLML-10), max(dum$sd.eLML+10))+
+    geom_boxplot(outlier.colour = "black", outlier.size = 3)+
+    theme_bw()+
+    theme(legend.title=element_blank(),
+          legend.text = element_text(size=14),
+          axis.title.x = element_text(size=14),
+          axis.text.x  = element_text(size=14),
+          axis.title.y = element_text(size=14),
+          axis.text.y  = element_text(size=14),
+          legend.position="none")
+  #ggsave(sprintf("%s_LFplot.tiff", LFPlot))
+  print(ggobj)
+}
+lapply(unique(BlockSumStats$Zone), doPlot)
+
+
+########################################
+#                   eLML L95%
+#######################################
+
+doPlot = function(LFPlot) {
+  dum = subset(SamResults, Zone == LFPlot)
+  ggobj = ggplot(data = dum, aes(y=L95eLML, x=as.factor(BlockNo))) + 
+    xlab("BlockNo") +
+    ylab("L95% eLML (mm)") +
+    labs(title= dum$Zone, size=10)+
+    #ylim(min(dum$sd.eLML-10), max(dum$sd.eLML+10))+
+    geom_boxplot(outlier.colour = "black", outlier.size = 3)+
+    theme_bw()+
+    theme(legend.title=element_blank(),
+          legend.text = element_text(size=14),
+          axis.title.x = element_text(size=14),
+          axis.text.x  = element_text(size=14),
+          axis.title.y = element_text(size=14),
+          axis.text.y  = element_text(size=14),
+          legend.position="none")
+  #ggsave(sprintf("%s_LFplot.tiff", LFPlot))
+  print(ggobj)
+}
+lapply(unique(BlockSumStats$Zone), doPlot)
+
+
+#eLML boxplot from the BootU95 of L50%
+doPlot = function(LFPlot) {
+  dum = subset(SamResults, Zone == LFPlot)
+  ggobj = ggplot(data = dum, aes(y=eLMLbootU95, x=as.factor(BlockNo))) + 
+    xlab("BlockNo") +
+    ylab("eLML (UCI) (mm)") +
+    labs(title= dum$Zone, size=10)+
+    #ylim(min(dum$sd.eLML-10), max(dum$sd.eLML+10))+
+    geom_boxplot(outlier.colour = "black", outlier.size = 3)+
+    theme_bw()+
+    theme(legend.title=element_blank(),
+          legend.text = element_text(size=14),
+          axis.title.x = element_text(size=14),
+          axis.text.x  = element_text(size=14),
+          axis.title.y = element_text(size=14),
+          axis.text.y  = element_text(size=14),
+          legend.position="none")
+  #ggsave(sprintf("%s_LFplot.tiff", LFPlot))
+  print(ggobj)
+}
+lapply(unique(BlockSumStats$Zone), doPlot)
