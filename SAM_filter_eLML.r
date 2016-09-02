@@ -16,15 +16,20 @@ library(plyr)
 library(gdata)
 library(ggplot2)
 library(multcompView)
+library(devtools)
 #sources
-source("D:/GitCode/AbResearch/SAM_utils_TechReport.R")
+#source("D:/GitCode/AbResearch/SAM_utils_TechReport.R")
 source("D:/GitCode/AbResearch/Grwth_matrix.r")
 
 # # load D:\R_Stuff\SAM    SAM2016_April  SAM_TechReport230816.RData
 # keep(SamResults, sure =T)
 
 #rename columns
-SamResults<-rename(SamResults, c("SIT_Latitude"="Latitude", "SIT_Longitude"="Longitude"))
+#SamResults<-rename(SamResults, c("SIT_Latitude"="Latitude", "SIT_Longitude"="Longitude", "SIT_StatBlock"="BlockNo", "SIT_SubBlock"="SubBlockNo"))
+names(SamResults)[names(SamResults)=='SIT_Latitude']<-"Latitude"
+names(SamResults)[names(SamResults)=='SIT_Longitude']<-"Longitude"
+names(SamResults)[names(SamResults)=='SIT_StatBlock']<-"BlockNo"
+names(SamResults)[names(SamResults)=='SIT_SubBlock']<-"SubBlockNo"
 
 #Add columns for sample size (n), and % of sample <L05 <L50 and >L95
 SamResults$n<-SamResults$I+SamResults$M
@@ -72,8 +77,8 @@ SamResults <- droplevels(SamResults)
 #DT Seasonal SAM MSc used the same sites for SAM work between 1999-2001. There is some concern that by resampling the same sites continuously for 
 #for 2.5 years there might be effects on the L50 outside of those found at all other sites. Therefore all but the 1st samples in 1999 and 2000 are removed.
 
-DT_MSc<-c("Sterile Island, tag site", "Actaeon Island, tag site")
-pick <- which(SamResults$SIT_Name == DT_MSc)
+DT_MSc<-c(171, 172)
+pick <- which(SamResults$SIT_Id == DT_MSc)
 DT_MSc<-SamResults[pick,]
 
 pick <- which(DT_MSc$FishYear == 2001)
@@ -95,11 +100,11 @@ for(d in Sites){
 }
 
 #Remove all DT_MSc sites and replace with DT_out
-DT_MSc<-c("Sterile Island, tag site", "Actaeon Island, tag site")
-pick <- which(SamResults$SIT_Name == DT_MSc)
-SamResults<-SamResults[-pick,]
 
-SamResults<-rbind(SamResults, DT_out)
+SamFilter<-droplevels(subset(SamResults, SIT_Id != 171))
+SamFilter<-droplevels(subset(SamFilter, SIT_Id != 172))
+
+SamFilter<-rbind(SamFilter, DT_out)
 
 # save(SamResults, file="SamResults.Rdata")
 # write.csv(SamResults, file='SamResultsLatLong.csv')
@@ -107,7 +112,7 @@ SamResults<-rbind(SamResults, DT_out)
 
 #remove duplicate records
 
-SamResults<-SamResults[!duplicated(SamResults[,1]),]
+SamFilter<-SamFilter[!duplicated(SamFilter[,1]),]
 
 #
 ###############################################
