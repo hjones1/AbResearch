@@ -12,15 +12,16 @@ names(IL.info)[names(IL.info)=='Latitude']<-"Latitude.IL"
 names(IL.info)[names(IL.info)=='Longitude']<-"Longitude.IL"
 names(IL.info)[names(IL.info)=='Site']<-"Site.IL"
 names(IL.info)[names(IL.info)=='SubBlockNo']<-"SubBlockNo.IL"
-names(IL.info)[names(IL.info)=='Site_code']<-"Growth.site"
+names(IL.info)[names(IL.info)=='Site_code']<-"Growth.site.IL"
 
 
 IL.Allo<-read.csv("DT_gwth_allocation.csv", header = T)
 library(lubridate) # year and month functions
+IL.Allo<-IL.Allo[,1:15]
 
 # create new field SiteCode same as in SamResults
-IL.Allo$SAM_Date <- as.Date(strptime(as.character(IL.Allo$Date2.IL), "%d/%m/%y", tz='AUSTRALIA/HOBART'))
-SamResults$FishYear<-format(SamResults$SAM_Date,'%Y')
+IL.Allo$SAM_Date <- as.Date(strptime(as.character(IL.Allo$Date2.IL), "%d/%m/%Y", tz='AUSTRALIA/HOBART'))
+IL.Allo$FishYear<-format(IL.Allo$SAM_Date,'%Y')
 IL.Allo$SiteCode <- paste(IL.Allo$Site.ID.IL,'_',year(IL.Allo$SAM_Date),'_',month(IL.Allo$SAM_Date), sep="")
 
 
@@ -29,18 +30,18 @@ SiteCodes<-unique(SamFilter$SiteCode)
 IL.Allo.extract<-IL.Allo[IL.Allo$SiteCode %in% SiteCodes,]
 
 #remove duplicate records
-IL.Allo.extract<-IL.Allo.extract[!duplicated(IL.Allo.extract[,28]),]
+IL.Allo.extract<-IL.Allo.extract[!duplicated(IL.Allo.extract[,18]),]
 
-IL.cbind<-IL.Allo.extract[,c(9,12:15,28)]
+IL.cbind<-IL.Allo.extract[,c(4,7,12:15,17,18)]
 
 #join IL.info and IL.cbind
 
-IL.cbind<-join(IL.cbind, IL.info[,c(3:5,9,10)], by = "Growth.site", type= "left")
+IL.cbind<-join(IL.cbind, IL.info[,c(3:5)], by = "Growth.site.IL", type= "left")
 
 #join the IL.cbind to SamResults
 SamFilter<-left_join(SamFilter,IL.cbind, by = 'SiteCode')
 
 
-#compact SamResults.IL
+#compact SamFilter
 
-Sam.IL<-SamFilter[,c(1,6,18:20,22,33:41)]
+#Sam.IL<-SamFilter[,c(1,6,18:20,22,33:41)]
