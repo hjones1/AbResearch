@@ -1,7 +1,7 @@
-#MH r functions for calculating SIZE TRANSITION MATRIX 
+#MH r functions for calculating SIZE TRANSITION MATRIX from p67 FRDC draft testing empirical HS
 
 
-## Example R code to conduct such a calculation using a size transition matrix
+## R code to conduct eLML calculation using a size transition matrix
 STM <- function(p,mids) {
   n <- length(mids)
   G <- matrix(0,nrow=n, ncol=n, dimnames=list(mids, mids))

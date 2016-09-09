@@ -114,6 +114,9 @@ SamFilter<-rbind(SamFilter, DT_out)
 
 SamFilter<-SamFilter[!duplicated(SamFilter[,1]),]
 
+
+ddply(SamResults,.(Zone), summarize,  n = length(SiteCode), 
+      mn.L50 = mean(LD50, na.rm=T), mn.LCI50 = mean(Ld50BootL95, na.rm=T)
 #
 ###############################################
 #Calculate the Size transition matrix and eLML
@@ -122,7 +125,7 @@ SamFilter<-SamFilter[!duplicated(SamFilter[,1]),]
 source("D:/GitCode/AbResearch/Grwth_matrix.r")
 
 
-Sites<-unique(SamResults$SiteCode)
+Sites<-unique(SamFilterIL$SiteCode)
 
 #####
 #     L50%
@@ -131,21 +134,26 @@ if (exists("eLMLResults"))
   rm(eLMLResults)
 
 for(i in Sites){
-  choice<-subset(SamResults, SiteCode == i)
-  choice$L50<-1.1539*choice$LD50-15.335
-  choice$L95<-1.0862*choice$LD50+32.461
-  choice$MaxDL<-0.46095*choice$L95-0.46856*choice$L50+5.58943
-  choice$SigMax<-choice$MaxDL/(1+exp((log(19)*(choice$LD50-choice$L50)/(choice$L95-choice$L50))))
+  choice<-subset(SamFilterIL, SiteCode == i)
+  if (is.na(choice$Ld95maxDL)) next
+  choice$SigMax<-choice$maxDL/(1+exp((log(19)*(choice$LD50-choice$L50)/(choice$L95-choice$L50))))
   
-  param <- c(choice$MaxDL,choice$L50,choice$L95,choice$SigMax) # MaxDL, L50, L95, SigMax
+  param <- c(choice$maxDL,choice$L50,choice$L95,choice$SigMax) # MaxDL, L50, L95, SigMax
   Lm50 <- choice$LD50 # estimated size at 50% maturity
   #eLML from L50
-  midpts <- seq(2,210,2)
+  midpts <- seq(2,210,2)# adjsut by zone ?
   G <- STM(param,midpts)
   Nt <- numeric(105)
   Nt[trunc(Lm50/2)] <- 1000
   Nt1 <- G %*% (G %*% Nt)
   choice$eLML<-(findmedL(Nt1))
+  Nt1df<-as.data.frame(Nt1)
+  Nt1df<-add_rownames(Nt1df, "Length")
+  pick<-which(Nt1df$V1 > 0)
+  Nt1df <- Nt1df[pick,]
+  pick<-which(Nt1df$Length >= 138)
+  U.LML <- Nt1df[pick,]
+  choice$PctU.LML<-sum(U.LML$V1/10)
 
   pick<-choice[,c(1,6,33:37)]  
   if (exists("eLMLResults"))

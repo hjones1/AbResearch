@@ -1,5 +1,14 @@
-#use SamFilter as precusror to this file
-
+#use SamFilter as precusror to this file 
+# use SamFilter030816.RData 
+library(car)
+library(MASS)
+library(boot)
+library(dplyr)
+library(plyr)
+library(gdata)
+library(ggplot2)
+library(multcompView)
+library(devtools)
 keep(SamFilter, SamResults, sure=T)
 
 ## The follwoing csv file was created from the Growth parameters tab in sex maturity data.xlsx held in Abalone\Section Shared\Size_limits SAMS\s+2 review
@@ -8,11 +17,11 @@ keep(SamFilter, SamResults, sure=T)
 setwd("D:/Fisheries Research/Abalone/SAM")
 IL.info<-read.csv("Inv.Log.Data.csv", header = T)
 summary(IL.info)
-names(IL.info)[names(IL.info)=='Latitude']<-"Latitude.IL"
-names(IL.info)[names(IL.info)=='Longitude']<-"Longitude.IL"
-names(IL.info)[names(IL.info)=='Site']<-"Site.IL"
-names(IL.info)[names(IL.info)=='SubBlockNo']<-"SubBlockNo.IL"
-names(IL.info)[names(IL.info)=='Site_code']<-"Growth.site.IL"
+# names(IL.info)[names(IL.info)=='Latitude']<-"Latitude.IL"
+# names(IL.info)[names(IL.info)=='Longitude']<-"Longitude.IL"
+# names(IL.info)[names(IL.info)=='Site']<-"Site.IL"
+# names(IL.info)[names(IL.info)=='SubBlockNo']<-"SubBlockNo.IL"
+# names(IL.info)[names(IL.info)=='Site_code']<-"Growth.site.IL"
 
 
 IL.Allo<-read.csv("DT_gwth_allocation.csv", header = T)
@@ -32,16 +41,33 @@ IL.Allo.extract<-IL.Allo[IL.Allo$SiteCode %in% SiteCodes,]
 #remove duplicate records
 IL.Allo.extract<-IL.Allo.extract[!duplicated(IL.Allo.extract[,18]),]
 
-IL.cbind<-IL.Allo.extract[,c(4,7,12:15,17,18)]
+IL.cbind<-IL.Allo.extract[,c(4,6:7,12:15,17,18)]
+
+IL.cbind$maxDL<-as.character(IL.cbind$maxDL)
+IL.cbind$maxDL<-as.numeric(IL.cbind$maxDL)
+IL.cbind$L50<-as.character(IL.cbind$L50)
+IL.cbind$L50<-as.numeric(IL.cbind$L50)
+IL.cbind$L95<-as.character(IL.cbind$L95)
+IL.cbind$L95<-as.numeric(IL.cbind$L95)
 
 #join IL.info and IL.cbind
 
 IL.cbind<-join(IL.cbind, IL.info[,c(3:5)], by = "Growth.site.IL", type= "left")
 
-#join the IL.cbind to SamResults
-SamFilter<-left_join(SamFilter,IL.cbind, by = 'SiteCode')
+#join the IL.cbind to SamFilter
+SamFilter$Site.ID.IL<-sapply(strsplit(SamFilter$SiteCode, "\\_"), `[[`, 1)
+SamFilter$Site.ID.IL<-as.integer(SamFilter$Site.ID.IL)
 
+SamFilterIL<-left_join(SamFilter,IL.cbind, by = 'Site.ID.IL')
 
+# look at unallocated SiteCodes
+Non.IL<-subset(SamFilterIL, is.na(maxDL))
+
+Non.IL<-Non.IL[,1:33]
+
+subblocks<-unique(Non.IL$SubBlockNo)
+
+filter.IL<-IL.cbind[IL.cbind$SubBlockNo.IL %in% subblocks,]
 #compact SamFilter
 
 #Sam.IL<-SamFilter[,c(1,6,18:20,22,33:41)]
