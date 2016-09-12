@@ -109,6 +109,7 @@ SamFilter<-rbind(SamFilter, DT_out)
 # save(SamResults, file="SamResults.Rdata")
 # write.csv(SamResults, file='SamResultsLatLong.csv')
 
+rm(choice, DT_MSc, DT_out, pick)
 
 #remove duplicate records
 
