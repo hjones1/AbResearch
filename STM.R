@@ -41,7 +41,7 @@ for(i in Sites){
   U.LML <- Nt1df[pick,]
   choice$PctU.LML<-sum(U.LML$V1/10)/2
   
-  pick<-choice[,c(1,40:41)]  
+  pick<-choice[,c(1,42:43)]  
   if (exists("eLMLResults"))
     eLMLResults <- rbind(eLMLResults, pick)
   else

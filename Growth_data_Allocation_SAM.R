@@ -1,43 +1,3 @@
-
-
-# 
-# choice<-subset(SamFilterIL, SiteCode == "125_1988_8")
-# choice<-droplevels(choice)
-# choice$SigMax<-choice$maxDL/(1+exp((log(19)*(choice$LD50-choice$L50)/(choice$L95-choice$L50))))
-# 
-# param <- c(choice$maxDL,choice$L50,choice$L95,choice$SigMax) # MaxDL, L50, L95, SigMax
-# Lm50 <- choice$LD50 # estimated size at 50% maturity
-# #eLML from L50
-# midpts <- seq(2,210,2)
-# G <- STM(param,midpts)
-# Nt <- numeric(105)
-# Nt[trunc(Lm50/2)] <- 1000
-# Nt1 <- G %*% (G %*% Nt)
-# choice$eLML<-(findmedL(Nt1))
-# Nt1df<-as.data.frame(Nt1)
-# Nt1df<-add_rownames(Nt1df, "Length")
-# pick<-which(Nt1df$V1 > 0)
-# Nt1df <- Nt1df[pick,]
-# pick<-which(Nt1df$Length >= 138)
-# U.LML <- Nt1df[pick,]
-# choice$PctU.LML<-sum(U.LML$V1/10)
-# #pick<-choice[,c(1,6,33:37)]  
-# 
-# 
-# ggplot(Nt1df, aes(x=Length, y = V1/10)) + 
-#   xlab('Length (mm)')+ 
-#   ylab('Frequency')+
-#   geom_density()+
-#   theme_bw()+#white background
-#   #scale_fill_grey(start = 0.9, end = 0.1)+
-#   theme(legend.position="none",
-#         axis.text.x  = element_text(size=14, angle = 90, vjust=0.4),
-#         axis.title.y = element_text(size=14),
-#         axis.text.y  = element_text(size=14),
-#         axis.title.x=element_blank())+
-#   scale_x_continuous(breaks=seq(as.numeric(min(Nt1df$Length)), as.numeric(max(Nt1df$Length)), 10))
-# ggsave("Mod_DenLML_plot.tiff", width = 9, height = 9, units = "cm")
-
 #use SamFilter as precusror to this file 
 # use SamFilter030816.RData 
 #   package mirrors if install fails install.packages('package name', repo='http://cran.csiro.au/')
@@ -51,6 +11,10 @@ library(gdata)
 library(ggplot2)
 library(multcompView)
 library(devtools)
+library(gdata)
+library(reshape)
+library(reshape2)
+library(lubridate)
 #######RBIND ALL SUBSETS (function below for unmatch columns)
 
 rbind.match.columns <- function(input1, input2) {
@@ -77,6 +41,40 @@ SamFilter$SubBlockNo[SamFilter$SubBlockNo==11] <- "11A"
 
 SamFilterIL<-SamFilter
 
+
+# #================================================================
+# #
+# #                         ADD IN SL DATA from raw SAM database file to SAMfilter
+# #
+# #================================================================
+
+
+infileNew <- "D:/R_Stuff/SAM/Logistic/SAMExport2016.csv"
+BlckPopNew <- read.csv(infileNew, header=TRUE, sep=',', dec='.', as.is=TRUE)
+BlckPopNew$SAM_Date <- as.Date(strptime(as.character(BlckPopNew$SAM_Date), "%d/%m/%Y", tz='AUSTRALIA/HOBART'))
+BlckPopNew$SiteCode <- paste(BlckPopNew$SIT_Id,'_',year(BlckPopNew$SAM_Date),'_',month(BlckPopNew$SAM_Date), sep="")
+BlckPopNew <- BlckPopNew[order(BlckPopNew$SiteCode,BlckPopNew$SPC_ShellLength),]
+
+BlckPop <- BlckPopNew
+
+SiteCodes<-unique(SamFilter$SiteCode)
+pick <- which(BlckPop$SiteCode %in% SiteCodes)
+BlckPopFilter<-BlckPop[pick,]
+
+names(BlckPopFilter)[names(BlckPopFilter)=='SIT_StatBlock']<-"BlockNo"
+names(BlckPopFilter)[names(BlckPopFilter)=='SIT_SubBlock']<-"SubBlockNo"
+#Reformat SublockNo
+BlckPopFilter$SubBlockNo<-paste(BlckPopFilter$BlockNo,BlckPopFilter$SubBlockNo, sep="")
+
+SLSubBlockSum<-ddply(BlckPopFilter,.(SubBlockNo), summarize,  
+                  SLmax = max(SPC_ShellLength, na.rm=T), SLq95 = quantile(SPC_ShellLength, 0.95, na.rm=T))
+#
+#Match SLBlockSum to SamFilter by subblock
+#
+SamFilterIL<-left_join(SamFilterIL,SLSubBlockSum, by = 'SubBlockNo')
+rm(BlckPop, BlckPopNew, SLSubBlockSum)
+
+
 setwd("D:/Fisheries Research/Abalone/SAM")
 IL.info<-read.csv("Inv.Log.Data.csv", header = T)
 summary(IL.info)
@@ -93,12 +91,13 @@ IL.info$Zone[IL.info$BlockNo %in%  c(1, 2, 3, 4,47, 48, 49,39, 40) | IL.info$Sub
 IL.info$Zone[IL.info$BlockNo %in% c(seq(32, 38,1),seq(41,46,1), seq(50,57,1))] <- "BS"
 
 IL.info<-droplevels(subset(IL.info, SIT_Id != "480"))
-
+IL.info<-droplevels(subset(IL.info, SIT_Id != "266"))
+IL.info<-droplevels(subset(IL.info, SIT_Id != "349"))
 
 #match SAM data to Growth data by site ID
-SAM.IL<-left_join(SamFilter,IL.info[,4:9], by = 'SIT_Id')
+SAM.IL<-left_join(SamFilterIL,IL.info[,4:9], by = 'SIT_Id')
 Unpick<-subset(SAM.IL, is.na(MaxDL))
-Unpick<-Unpick[,1:32]
+Unpick<-Unpick[,1:34]
 SIT_ID<-subset(SAM.IL, !is.na(MaxDL))
 
 rm(SAM.IL)
@@ -130,14 +129,50 @@ ggplot(data = SIT_ID, aes(x=LD50,  y=L50)) +
   theme(axis.title.y = element_text(size=14),
         axis.text.y  = element_text(size=14))
 
+#  Load package
+#require( data.table )
+
+# #  Make data.frames into data.tables with a key column
+# 
+# unpickdt <- data.table(Unpick , key = list("LD50","SLmax"))
+# 
+# SIT_IDdt <- data.table(SIT_ID , key = list("LD50","SLmax"))
+# 
+# #  Join based on the key column of the two tables (time & time1)
+# #  roll = "nearest" gives the desired behaviour
+# #  list( obs , time1 , temp ) gives the columns you want to return from dt
+# test<-SIT_IDdt[ unpickdt , list(SiteCode) , roll = "nearest" , by=list()]
+# 
+# #Function from solution
+# func = function(x,v){
+#   vec = with(SIT_IDdt, which.min(abs(x - LD50)) + which.min(abs(v - LD50)))
+#   unpickdt[which.min(vec),]$Value
+# }
+# 
+# test = transform(SIT_IDdt, Value=apply(SIT_IDdt, 1, function(u) func(u[1], u[2])))
+# 
+
 
 
 Unpick$match<-sapply(Unpick$LD50,function(x)which.min(abs(x - SIT_ID$LD50)))
 
-SIT_ID$match<-c(1:36)
-SAMjoin<-left_join(Unpick,SIT_ID[,c(6,33:38)], by = 'match')
+SIT_ID$match<-c(1:33)
+SAMjoin<-left_join(Unpick,SIT_ID[,c(6,33:40)], by = 'match')
 names(SAMjoin)[names(SAMjoin)=='LD50.x']<-"LD50"
 names(SAMjoin)[names(SAMjoin)=='LD50.y']<-"GrowthLD50"
+names(SAMjoin)[names(SAMjoin)=='SLmax.y']<-"SLmax.Growth"
+names(SAMjoin)[names(SAMjoin)=='SLq95.y']<-"SLq95.Growth"
+names(SAMjoin)[names(SAMjoin)=='SLmax.x']<-"SLmax"
+names(SAMjoin)[names(SAMjoin)=='SLq95.x']<-"SLq95"
+
+#LM LM50 to Grwoth LM50
+boxcox(SAMjoin$LD50^3.2~SAMjoin$GrowthLD50)
+fit<-lm(LD50^3.2~GrowthLD50, data=SAMjoin)
+summary(fit)
+anova(fit)
+par(mfrow = c(2,2))
+plot(fit)
+par(mfrow = c(1,1))
 
 ggplot(data = SAMjoin, aes(x=LD50,  y=GrowthLD50)) + 
   geom_point()+
@@ -156,46 +191,70 @@ ggplot(data = SAMjoin, aes(x=LD50,  y=GrowthLD50)) +
   theme(axis.title.y = element_text(size=14),
         axis.text.y  = element_text(size=14))
 
-#LM LM50 to Grwoth LM50
-boxcox(SAMjoin$LD50^3~SAMjoin$GrowthLD50)
-fit<-lm(LD50^3~GrowthLD50, data=SAMjoin)
-summary(fit)
-anova(fit)
-par(mfrow = c(2,2))
-plot(fit)
-par(mfrow = c(1,1))
+#A look at the allocations
+Sites<-SAMjoin[,c(6,18,22,29,34:42)]
+
+SAMILResults<-rbind.match.columns(SIT_ID,SAMjoin)
 
 
-#Fit LM50 to l50
-boxcox(SAMjoin$LD50^3~SAMjoin$L50)
-fit<-lm(LD50^3~L50, data=SAMjoin)
-summary(fit)
-anova(fit)
-par(mfrow = c(2,2))
-plot(fit)
-par(mfrow = c(1,1))
-
-ggplot(data = SAMjoin, aes(x=LD50,  y=L50)) + 
-  geom_point()+
-  xlab(bquote(''~LM['50%']~'(mm)')) + ylab(bquote(''~L['50']~'(mm)'))+
-  geom_smooth(method=lm, se=F, fill='Black', fullrange=F, size=1.2, color='black')+
+# 
+# 
+ggplot(data = SAMjoin, aes(x=SLmax,  y=SLmax.Growth)) +
+  geom_point(aes(color=as.factor(BlockNo)))+
+  xlab('Max SL (mm)') + ylab('Growth Site Max SL (mm)')+
+  geom_smooth(method=lm, se=F, fill='black', fullrange=F, size=1.2, color='black')+
   #ggtitle(paste(dum$SubBlockNo, FishYear))+
   #labs(title= Yeardum$SubBlockNo, size=10)+
   #geom_histogram(binwidth=50)+
   theme_bw()+
-  scale_color_identity()+ #this makes sure the color follows the color argument above in aes()
-  theme(legend.position=c(0.9, 0.8))+
+    theme(legend.position=c(0.9, 0.2))+
   theme(legend.title=element_blank())+
   theme(legend.text = element_text(size=14))+
   theme(axis.title.x = element_text(size=14),
         axis.text.x  = element_text(size=14))+
   theme(axis.title.y = element_text(size=14),
         axis.text.y  = element_text(size=14))
+# 
+# 
+# #Fit LM50 to l50
+# boxcox(SAMjoin$SLmax^3~SAMjoin$SLmax.Growth)
+# fit<-lm(LD50^3~L50, data=SAMjoin)
+# summary(fit)
+# anova(fit)
+# par(mfrow = c(2,2))
+# plot(fit)
+# par(mfrow = c(1,1))
+# 
+# 
+# 
+# #Fit LM50 to l50
+# boxcox(SAMjoin$LD50^3~SAMjoin$L50)
+# fit<-lm(LD50^3~L50, data=SAMjoin)
+# summary(fit)
+# anova(fit)
+# par(mfrow = c(2,2))
+# plot(fit)
+# par(mfrow = c(1,1))
+# 
+# ggplot(data = SAMjoin, aes(x=LD50,  y=L50)) + 
+#   geom_point()+
+#   xlab(bquote(''~LM['50%']~'(mm)')) + ylab(bquote(''~L['50']~'(mm)'))+
+#   geom_smooth(method=lm, se=F, fill='Black', fullrange=F, size=1.2, color='black')+
+#   #ggtitle(paste(dum$SubBlockNo, FishYear))+
+#   #labs(title= Yeardum$SubBlockNo, size=10)+
+#   #geom_histogram(binwidth=50)+
+#   theme_bw()+
+#   scale_color_identity()+ #this makes sure the color follows the color argument above in aes()
+#   theme(legend.position=c(0.9, 0.8))+
+#   theme(legend.title=element_blank())+
+#   theme(legend.text = element_text(size=14))+
+#   theme(axis.title.x = element_text(size=14),
+#         axis.text.x  = element_text(size=14))+
+#   theme(axis.title.y = element_text(size=14),
+#         axis.text.y  = element_text(size=14))
 
-#A look at the allocations
-Sites<-SAMjoin[,c(6,18,22,29,34:39)]
 
-SAMILResults<-rbind.match.columns(SIT_ID,SAMjoin)
+
 
 # #================================================================
 # #
